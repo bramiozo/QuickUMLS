@@ -51,6 +51,7 @@ def setup_package():
             'concept extraction from medical text'
         ),
         packages=PACKAGES,
+        extras_requires={"plyvel":['plyvel'], "leveldb":['leveldb']},
         long_description=readme,
         long_description_content_type='text/markdown',
         author=about['__author__'],

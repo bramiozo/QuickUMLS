@@ -12,13 +12,19 @@ from six.moves import xrange
 
 # installed modules
 import numpy
-import plyvel as leveldb
-try:
-    import unqlite
-    UNQLITE_AVAILABLE = True
-except ImportError:
-    UNQLITE_AVAILABLE = False
 
+import unqlite
+
+try:
+    import plyvel
+    PLYVEL_AVAILABLE = True
+except:
+    PLYVEL_AVAILABLE = False
+try:
+    import leveldb
+    LEVELDB_AVAILABLE = True
+except:
+    LEVELDB_AVAILABLE = False
 # project imports
 from quickumls_simstring import simstring
 
@@ -222,17 +228,13 @@ class Intervals(object):
 
 
 class CuiSemTypesDB(object):
-    def __init__(self, path, database_backend='leveldb'):
+    def __init__(self, path, database_backend='unqlite'):
         if not (os.path.exists(path) or os.path.isdir(path)):
             err_msg = (
                 '"{}" is not a valid directory').format(path)
             raise IOError(err_msg)
 
         if database_backend == 'unqlite':
-            assert UNQLITE_AVAILABLE, (
-                'You selected unqlite as database backend, but it is not '
-                'installed. Please install it via `pip install unqlite`'
-            )
             self.cui_db = unqlite.UnQLite(os.path.join(path, 'cui.unqlite'))
             self.cui_db_put = self.cui_db.store
             self.cui_db_get = self.cui_db.fetch
@@ -240,12 +242,27 @@ class CuiSemTypesDB(object):
             self.semtypes_db_put = self.semtypes_db.store
             self.semtypes_db_get = self.semtypes_db.fetch
         elif database_backend == 'leveldb':
+            assert LEVELDB_AVAILABLE, (
+                'You selected leveldb as database backend, but it is not '
+                'installed. Please install it.'
+            )
+            self.cui_db = leveldb.LevelDB(os.path.join(path, 'cui.leveldb'))
+            self.cui_db_put = self.cui_db.Put
+            self.cui_db_get = self.cui_db.Get
+            self.semtypes_db = leveldb.LevelDB(os.path.join(path, 'semtypes.leveldb'))
+            self.semtypes_db_put = self.semtypes_db.Put
+            self.semtypes_db_get = self.semtypes_db.Get
+        elif database_backend == 'plyvel':
+            assert PLYVEL_AVAILABLE, (
+                'You selected plyvel/leveldb as database backend, but it is not '
+                'installed. Please install it.'
+            )
             self.cui_db = leveldb.DB(os.path.join(path, 'cui.leveldb'))
             self.cui_db_put = self.cui_db.put
             self.cui_db_get = self.cui_db.get
             self.semtypes_db = leveldb.DB(os.path.join(path, 'semtypes.leveldb'))
             self.semtypes_db_put = self.semtypes_db.put
-            self.semtypes_db_get = self.semtypes_db.get
+            self.semtypes_db_get = self.semtypes_db.get           
         else:
             raise ValueError(f'database_backend {database_backend} not recognized')
 
